@@ -1,5 +1,4 @@
 // This source code is from the texbook Data Structures Using C, 2nd edition, by Reema Thareja, Oxford University Press, 2014.
-// The detailed comments and references to the lecture slides are added by Vladimir Tarasov
 // Data Structures, 7.5 credits, Spring 2022
 
 #include <stdio.h>
@@ -32,9 +31,11 @@ struct node *search(struct node *ptr, int data)
 struct node *insert(int data, struct node *tree, bool *ht_inc)
 {
     // ht_inc is a tricky variable. It is set to TRUE after a new node is inserted
-    // as a leaf, which means that a re-balancing might be needed at a hihger
+    // as a leaf, which means that a re-balancing might be needed at a higher
     // level of a tree, where the critical node resides. When re-balancing is  
     // done or will not be needed at a hihger level, ht_inc is set to FALSE.
+    // SUMMARY: If re-balancing needs to be done; ht_inc = TRUE, otherwise, FALSE.
+
     struct node *aptr, *bptr;
     if (tree == NULL)
     {
@@ -190,16 +191,74 @@ void inorder(struct node *ptr)
     }
 }
 
+// USE 
+struct node *findLargestElement(struct node *tree)
+{
+    if ((tree == NULL) || (tree->right == NULL))
+        return tree;
+    else
+        return findLargestElement(tree->right);
+}
+
+// USE
+struct node *delete(int data, struct node *tree, bool *ht_inc)
+{
+    struct node *ptr;
+
+    if (tree == NULL)
+    {
+        printf("\n Tree is empty \n");
+    }
+    else if (data < tree->data)
+    {
+        tree->left = delete(data, tree->left, ht_inc);
+    }
+    else if (data > tree->data)
+    {
+        tree->right = delete(data, tree->right, ht_inc);
+    }
+    else // data == tree->data
+    {
+        if (tree->left && tree->right) // replace curr node and delete original
+        {
+            // Find the in-order predecessor
+            ptr = findLargestElement(tree->left);
+            tree->data = ptr->data;
+            // Delete the node of the in-order predecessor
+            tree->left = delete(ptr->data, tree->left, ht_inc);
+        }
+        else // at least one child is absent
+        {
+            ptr = tree;
+            // no children - return NULL
+            if (tree->left == NULL && tree->right == NULL)
+                tree = NULL;
+            // if the node has a child (but not both)
+            // it is replaced by the child, which is returned
+            else if (tree->left != NULL)
+                tree = tree->left;
+            else
+                tree = tree->right;
+            // Delete the initial node
+            free(ptr);
+        }
+    }
+    return tree;
+}
+
 int main()
 {
     bool ht_inc;
     int data, num;
     struct node *root = NULL;
+    int arr1[15] = {45, 36,63, 27,39,0,72, 0,0,37,41,0,0,0,0}; // 15 nodes
+    int arr2[15] = {54, 45,63, 36,51,61,0, 18,39,47,52,0,0,0,0}; // 15 nodes
     while (1)
     {
         printf("1.Insert\n");
         printf("2.Display\n");
-        printf("3.Quit\n");
+        printf("3.Delete\n");
+        printf("4.Quit\n");
         printf("Enter your option : ");
         scanf("%d", &num);
         switch (num)
@@ -226,6 +285,13 @@ int main()
             printf("\n");
             break;
         case 3:
+            printf("Enter the value to be deleted: ");
+            scanf("%d", &data);
+            if (search(root, data) == NULL)
+                root = delete(data, root, &ht_inc);
+            else
+                printf("Element does not exist in tree");            
+        case 4:
             exit(1);
         default:
             printf("Wrong option\n");
